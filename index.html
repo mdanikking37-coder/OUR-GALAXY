@@ -86,8 +86,46 @@ function setPage(id){current=id;render();window.scrollTo({top:0,behavior:'smooth
 function renderNav(){const make=(mobile)=>nav.map(([label,ico,id],i)=>`<button class="${mobile?'nav-item':'nav-link'} ${current===id?'active':''}" aria-current="${current===id?'page':'false'}" onclick="setPage('${id}')"><span class="ico">${ico}</span><span>${mobile?label:String(i+1).padStart(2,'0')+' '+label}</span></button>`).join('');document.getElementById('bottomNav').innerHTML=make(true);document.getElementById('desktopNav').innerHTML=make(false)}
 function productCards(list){return `<div class="grid">${list.map((p,i)=>`<article class="card"><div class="product-art">${p.icon}</div><h3>${p.name}</h3><div class="muted">${p.desc}</div><div class="price-row"><span class="price">${p.price}</span><button class="btn primary small" onclick="showToast('এটি ডেমো। অর্ডার ও পেমেন্ট এখনো যুক্ত করা হয়নি।')">Details</button></div></article>`).join('')}</div>`}
 function home(){return `<section class="hero"><div class="eyebrow">PLAY · CREATE · LEVEL UP</div><h1>Your universe.<br><span style="color:var(--accent2)">Your Galaxy.</span></h1><p>গেমিং টপ-আপ, গাইড, অফার এবং ক্রিয়েটিভ গেমিং সার্ভিস—সব এক জায়গায়।</p><button class="btn primary" onclick="setPage('topup')">Explore Top Up →</button> <button class="btn" onclick="setPage('tutorial')">Tutorials</button></section><div class="section-head"><div><h2>Explore Galaxy</h2><p>তোমার দরকারি বিভাগ বেছে নাও</p></div><span class="pill">8 বিভাগ</span></div><div class="grid">${nav.map(([name,ico,id],i)=>`<button class="card" style="text-align:left;color:inherit" onclick="setPage('${id}')"><span class="serial">${String(i+1).padStart(2,'0')}</span><div style="font-size:27px;margin-bottom:12px">${ico}</div><h3>${name}</h3><div class="muted">${({'home':'OUR Galaxy-এর মূল পেজ ও বিভাগসমূহ','tutorial':'গেমিং গাইড ও শেখার উপকরণ','topup':'প্যাকেজ ও টপ-আপ তথ্য','ids':'বৈধ গেমিং ক্রিয়েটিভ সার্ভিস','orders':'তোমার অর্ডার দেখো','profile':'অ্যাকাউন্ট সেটিংস','offers':'নতুন অফার ও প্যাকেজ','support':'সাহায্য ও যোগাযোগ'})[id]}</div></button>`).join('')}</div><div class="section-head"><div><h2>Popular Services</h2><p>Free Fire Diamonds · প্যাকেজ প্রিভিউ</p></div></div>${productCards(products.topup.slice(0,3))}<div class="notice">নিরাপত্তা নোট: কখনো গেমের পাসওয়ার্ড, Facebook/Google লগইন বা OTP কারও সঙ্গে শেয়ার করবে না।</div>`}
-function pageContent(){switch(current){case'home':return home();case'tutorial':return `<div class="eyebrow">LEARN & PLAY</div><h1 class="page-title">Tutorials</h1><p class="muted">গেমিং, অ্যাকাউন্ট সুরক্ষা ও কনটেন্ট তৈরির গাইড।</p><div class="grid"><article class="card"><div class="product-art">🛡️</div><h3>Account Safety</h3><p class="muted">শক্তিশালী পাসওয়ার্ড, দুই-ধাপ যাচাইকরণ ও ফিশিং থেকে বাঁচার উপায়।</p><button class="btn small" onclick="showToast('টিউটোরিয়াল কনটেন্ট পরে যোগ করা হবে।')">গাইড দেখুন</button></article><article class="card"><div class="product-art">🎬</div><h3>Gameplay Video</h3><p class="muted">নিজের gameplay থেকে ভালো highlight video বানানোর ধাপ।</p><button class="btn small" onclick="showToast('টিউটোরিয়াল কনটেন্ট পরে যোগ করা হবে।')">গাইড দেখুন</button></article></div>`;case'topup':return topupPage();case'ids':return `<div class="eyebrow">GAMING CREATOR SERVICES</div><h1 class="page-title">FF IDs / Gaming Services</h1><p class="muted">এই বিভাগে অ্যাকাউন্ট কেনাবেচার পরিবর্তে বৈধ গেমিং-সম্পর্কিত পণ্য ও সেবা রাখা হয়েছে।</p><div class="notice">Garena জানিয়েছে Free Fire অ্যাকাউন্ট কেনা, বিক্রি, শেয়ার বা ট্রেড করলে তাদের শর্ত ভঙ্গ হতে পারে এবং অ্যাকাউন্ট স্থায়ীভাবে ব্যান হতে পারে। <a style="color:var(--accent2)" target="_blank" rel="noreferrer" href="https://ffsupportbd.garena.com/hc/en-us/articles/4501226638618-Account-Trading">অফিশিয়াল নীতিমালা পড়ুন</a>.</div>${productCards(products.ids)}<div class="card" style="margin-top:14px"><h3>ভিডিও লিংক যোগ করার নমুনা</h3><p class="muted">প্রতিটি সার্ভিসের পেজে YouTube বা অনুমোদিত ভিডিও লিংক বসানোর সুবিধা পরবর্তী ধাপে তৈরি করা যাবে।</p><input id="videoUrl" class="field" placeholder="https://www.youtube.com/watch?v=..."/><button class="btn primary" onclick="previewVideo()">ভিডিও লিংক যাচাই</button><div id="videoPreview" class="muted" style="margin-top:10px"></div></div>`;case'orders':return `<div class="eyebrow">ORDER CENTER</div><h1 class="page-title">My Orders</h1>${user?'<div id="ordersList" class="empty">অর্ডার লোড হচ্ছে…</div>':'<div class="empty">অর্ডার দেখতে লগইন করতে হবে।<br><br><button class="btn primary" onclick="openAuth(\'login\')">Login</button></div>'}`;case'profile':return `<div class="eyebrow">YOUR ACCOUNT</div><h1 class="page-title">Profile</h1>${user?`<div class="card"><h3>${user.name}</h3><p class="muted">${user.email}</p><button class="btn" onclick="logoutUser()">Logout</button></div>`:`<div class="card"><p class="muted">প্রোফাইল ব্যবহার করতে লগইন বা রেজিস্ট্রেশন করো।</p><button class="btn primary" onclick="openAuth('login')">Login</button> <button class="btn" onclick="openAuth('register')">Register</button></div><div class="notice">তোমার অ্যাকাউন্টের তথ্য সার্ভারে যাচাই হয়। পাসওয়ার্ড ডেটাবেজে হ্যাশ করে রাখা হয়।</div>`}`;case'offers':return `<div class="eyebrow">LIMITED PICKS</div><h1 class="page-title">Offers</h1><p class="muted">সার্ভিস ও প্রমোশন—ডেমো কনটেন্ট।</p>${productCards(products.offers)}`;case'admin':return adminPage();case'support':return `<div class="eyebrow">WE'RE HERE TO HELP</div><h1 class="page-title">Support</h1><div class="grid"><article class="card"><div class="product-art">💬</div><h3>Customer Support</h3><p class="muted">সাপোর্টের ইমেইল বা WhatsApp নম্বর এখানে যুক্ত করা যাবে।</p><button class="btn" onclick="showToast('প্রকৃত সাপোর্ট লিংক যোগ করতে হবে।')">Contact Support</button></article><article class="card"><div class="product-art">❓</div><h3>FAQ</h3><p class="muted">অর্ডার, ডেলিভারি, রিফান্ড ও অ্যাকাউন্ট নিরাপত্তা সম্পর্কে প্রশ্নোত্তর।</p><button class="btn" onclick="showToast('FAQ কনটেন্ট পরে যোগ করা হবে।')">Read FAQ</button></article></div><section class="flow-panel"><h3>Admin tools</h3><p class="small-help">অ্যাডমিন ড্যাশবোর্ডের ডিজাইন প্রিভিউ দেখতে এখানে যাও। এটি এখন সুরক্ষিত বা লাইভ অ্যাডমিন সিস্টেম নয়।</p><button class="btn" onclick="setPage('admin')">Admin Dashboard →</button></section>`;default:return home()}}
-
+function pageContent(){switch(current){case'home':return home();case'tutorial':return `<div class="eyebrow">LEARN & PLAY</div><h1 class="page-title">Tutorials</h1><p class="muted">গেমিং, অ্যাকাউন্ট সুরক্ষা ও কনটেন্ট তৈরির গাইড।</p><div class="grid"><article class="card"><div class="product-art">🛡️</div><h3>Account Safety</h3><p class="muted">শক্তিশালী পাসওয়ার্ড, দুই-ধাপ যাচাইকরণ ও ফিশিং থেকে বাঁচার উপায়।</p><button class="btn small" onclick="showToast('টিউটোরিয়াল কনটেন্ট পরে যোগ করা হবে।')">গাইড দেখুন</button></article><article class="card"><div class="product-art">🎬</div><h3>Gameplay Video</h3><p class="muted">নিজের gameplay থেকে ভালো highlight video বানানোর ধাপ।</p><button class="btn small" onclick="showToast('টিউটোরিয়াল কনটেন্ট পরে যোগ করা হবে।')">গাইড দেখুন</button></article></div>`;case'topup':return topupPage();case'wallet':return walletPage();case'ids':return `<div class="eyebrow">GAMING CREATOR SERVICES</div><h1 class="page-title">FF IDs / Gaming Services</h1><p class="muted">এই বিভাগে অ্যাকাউন্ট কেনাবেচার পরিবর্তে বৈধ গেমিং-সম্পর্কিত পণ্য ও সেবা রাখা হয়েছে।</p><div class="notice">Garena জানিয়েছে Free Fire অ্যাকাউন্ট কেনা, বিক্রি, শেয়ার বা ট্রেড করলে তাদের শর্ত ভঙ্গ হতে পারে এবং অ্যাকাউন্ট স্থায়ীভাবে ব্যান হতে পারে। <a style="color:var(--accent2)" target="_blank" rel="noreferrer" href="https://ffsupportbd.garena.com/hc/en-us/articles/4501226638618-Account-Trading">অফিশিয়াল নীতিমালা পড়ুন</a>.</div>${productCards(products.ids)}<div class="card" style="margin-top:14px"><h3>ভিডিও লিংক যোগ করার নমুনা</h3><p class="muted">প্রতিটি সার্ভিসের পেজে YouTube বা অনুমোদিত ভিডিও লিংক বসানোর সুবিধা পরবর্তী ধাপে তৈরি করা যাবে।</p><input id="videoUrl" class="field" placeholder="https://www.youtube.com/watch?v=..."/><button class="btn primary" onclick="previewVideo()">ভিডিও লিংক যাচাই</button><div id="videoPreview" class="muted" style="margin-top:10px"></div></div>`;case'orders':return `<div class="eyebrow">ORDER CENTER</div><h1 class="page-title">My Orders</h1>${user?'<div id="ordersList" class="empty">অর্ডার লোড হচ্ছে…</div>':'<div class="empty">অর্ডার দেখতে লগইন করতে হবে।<br><br><button class="btn primary" onclick="openAuth(\'login\')">Login</button></div>'}`;case'profile':return `<div class="eyebrow">YOUR ACCOUNT</div><h1 class="page-title">Profile</h1>${user?`<div class="card"><h3>${user.name}</h3><p class="muted">${user.email}</p><button class="btn" onclick="logoutUser()">Logout</button></div>`:`<div class="card"><p class="muted">প্রোফাইল ব্যবহার করতে লগইন বা রেজিস্ট্রেশন করো।</p><button class="btn primary" onclick="openAuth('login')">Login</button> <button class="btn" onclick="openAuth('register')">Register</button></div><div class="notice">তোমার অ্যাকাউন্টের তথ্য সার্ভারে যাচাই হয়। পাসওয়ার্ড ডেটাবেজে হ্যাশ করে রাখা হয়।</div>`}`;case'offers':return `<div class="eyebrow">LIMITED PICKS</div><h1 class="page-title">Offers</h1><p class="muted">সার্ভিস ও প্রমোশন—ডেমো কনটেন্ট।</p>${productCards(products.offers)}`;case'admin':return adminPage();case'support':return `<div class="eyebrow">WE'RE HERE TO HELP</div><h1 class="page-title">Support</h1><div class="grid"><article class="card"><div class="product-art">💬</div><h3>Customer Support</h3><p class="muted">সাপোর্টের ইমেইল বা WhatsApp নম্বর এখানে যুক্ত করা যাবে।</p><button class="btn" onclick="showToast('প্রকৃত সাপোর্ট লিংক যোগ করতে হবে।')">Contact Support</button></article><article class="card"><div class="product-art">❓</div><h3>FAQ</h3><p class="muted">অর্ডার, ডেলিভারি, রিফান্ড ও অ্যাকাউন্ট নিরাপত্তা সম্পর্কে প্রশ্নোত্তর।</p><button class="btn" onclick="showToast('FAQ কনটেন্ট পরে যোগ করা হবে।')">Read FAQ</button></article></div><section class="flow-panel"><h3>Admin tools</h3><p class="small-help">অ্যাডমিন ড্যাশবোর্ডের ডিজাইন প্রিভিউ দেখতে এখানে যাও। এটি এখন সুরক্ষিত বা লাইভ অ্যাডমিন সিস্টেম নয়।</p><button class="btn" onclick="setPage('admin')">Admin Dashboard →</button></section>`;default:return home()}}
+function walletPage(){
+ if(!user){
+  return `<div class="eyebrow">MY WALLET</div>
+  <h1 class="page-title">Wallet</h1>
+  <div class="card">
+   <p class="muted">Wallet ব্যবহার করতে প্রথমে লগইন করো।</p>
+   <button class="btn primary" onclick="openAuth('login')">Login</button>
+  </div>`;
+ }
+ return `<div class="eyebrow">MY WALLET</div>
+ <h1 class="page-title">আমার Wallet</h1>
+ <section class="card">
+  <p class="muted">বর্তমান ব্যালেন্স</p>
+  <h2 id="walletBalance">৳ 0.00</h2>
+  <p class="small-help">পেমেন্ট যাচাই ও অনুমোদনের পর ব্যালেন্স যোগ হবে।</p>
+ </section>
+ <section class="flow-panel" style="margin-top:14px">
+  <h3>টাকা জমা দাও</h3>
+  <p class="muted">bKash অথবা Nagad দিয়ে পেমেন্ট করার পর তথ্য জমা দাও।</p>
+  <form id="walletDepositForm" onsubmit="submitWalletDeposit(event)">
+   <label class="form-label" for="walletMethod">পেমেন্ট মাধ্যম</label>
+   <select class="field" id="walletMethod" required>
+    <option value="bKash">bKash</option>
+    <option value="Nagad">Nagad</option>
+   </select>
+   <label class="form-label" for="walletAmount">টাকার পরিমাণ (৳)</label>
+   <input class="field" id="walletAmount" type="number" min="10" max="50000" step="1" placeholder="যেমন: 100" required>
+   <label class="form-label" for="walletTransactionId">Transaction ID</label>
+   <input class="field" id="walletTransactionId" maxlength="100" autocomplete="off" placeholder="পেমেন্টের Transaction ID" required>
+   <button class="btn primary full-btn" type="submit">জমার অনুরোধ পাঠাও</button>
+  </form>
+  <div id="walletMessage" class="notice" style="display:none;margin-top:12px" aria-live="polite"></div>
+ </section>
+ <section class="flow-panel" style="margin-top:14px">
+  <h3>জমার অনুরোধের ইতিহাস</h3>
+  <div id="walletRequests" class="empty">তথ্য লোড হচ্ছে…</div>
+ </section>
+ <div class="notice" style="margin-top:14px">সতর্কতা: পেমেন্টের সঠিক তথ্য দাও। অ্যাডমিন যাচাই না করা পর্যন্ত ব্যালেন্স যোগ হবে না। শুধু Transaction ID জমা দিলেই পেমেন্ট নিশ্চিত হয় না।</div>`;
+}
 const ffPackages = [
  {id:'ff25',diamonds:25,label:'Starter Pack',note:'ছোট প্যাক'},
  {id:'ff50',diamonds:50,label:'Mini Pack',note:'দ্রুত টপ-আপ'},
@@ -114,6 +152,74 @@ function topupPage(){
  <button type="submit" class="btn primary full-btn">অর্ডার জমা দাও →</button>
  </form><div id="ffReview" aria-live="polite"></div></section>
  <div class="notice"><strong>গুরুত্বপূর্ণ:</strong> অর্ডার সার্ভারে সংরক্ষিত হবে। এই সংস্করণে অনলাইন পেমেন্ট ও স্বয়ংক্রিয় ডায়মন্ড ডেলিভারি সংযুক্ত নয়; অ্যাডমিন মূল্য ও ডেলিভারি নিশ্চিত করবে।</div>`;
+}
+ async function loadWallet(){
+ const balanceBox=document.getElementById('walletBalance');
+ const requestsBox=document.getElementById('walletRequests');
+ if(!balanceBox||!requestsBox||!user)return;
+
+ requestsBox.textContent='তথ্য লোড হচ্ছে…';
+
+ try{
+  const r=await fetch('/api/wallet',{credentials:'same-origin'});
+  const d=await r.json();
+  if(!r.ok)throw new Error(d.error||'Wallet লোড হয়নি');
+
+  balanceBox.textContent='৳ '+Number(d.balance||0).toFixed(2);
+
+  if(!d.requests||!d.requests.length){
+   requestsBox.className='empty';
+   requestsBox.textContent='এখনো কোনো জমার অনুরোধ নেই।';
+  }else{
+   requestsBox.className='grid';
+   requestsBox.innerHTML=d.requests.map(x=>`
+    <article class="card">
+     <h3>${escapeHtml(x.method)} · ৳${Number(x.amount).toFixed(2)}</h3>
+     <p class="muted">Transaction ID: ${escapeHtml(x.transaction_id)}</p>
+     <p>স্ট্যাটাস: <strong>${escapeHtml(x.status)}</strong></p>
+     <p class="small-help">${escapeHtml(x.created_at)}</p>
+    </article>
+   `).join('');
+  }
+ }catch(err){
+  requestsBox.textContent=err.message||'Wallet লোড করা যায়নি।';
+ }
+}
+
+async function submitWalletDeposit(e){
+ e.preventDefault();
+
+ const form=e.currentTarget;
+ const message=document.getElementById('walletMessage');
+ if(!form.reportValidity())return;
+
+ const payload={
+  method:document.getElementById('walletMethod').value,
+  amount:Number(document.getElementById('walletAmount').value),
+  transaction_id:document.getElementById('walletTransactionId').value.trim()
+ };
+
+ message.style.display='block';
+ message.textContent='অনুরোধ পাঠানো হচ্ছে…';
+
+ try{
+  const r=await fetch('/api/wallet/deposit',{
+   method:'POST',
+   headers:{'Content-Type':'application/json'},
+   credentials:'same-origin',
+   body:JSON.stringify(payload)
+  });
+
+  const d=await r.json();
+  if(!r.ok)throw new Error(d.error||'অনুরোধ জমা হয়নি');
+
+  message.textContent=d.message||'অনুরোধ জমা হয়েছে।';
+  document.getElementById('walletAmount').value='';
+  document.getElementById('walletTransactionId').value='';
+  await loadWallet();
+ }catch(err){
+  message.textContent=err.message||'সার্ভারের সঙ্গে সংযোগ করা যায়নি।';
+ }
 }
 function chooseFFPackage(id){
  if(!ffPackages.some(p=>p.id===id))return;
@@ -159,7 +265,7 @@ function renderAuthButtons(){
  }
 }
 
-function render(){renderNav();renderAuthButtons();document.getElementById('app').innerHTML=pageContent();if(current==='orders'&&user)loadOrders();if(current==='admin'&&adminUser)loadAdminOrders()}
+function render(){renderNav();renderAuthButtons();document.getElementById('app').innerHTML=pageContent();if(current==='orders'&&user)loadOrders();if(current==='wallet'&&user)loadWallet();if(current==='admin'&&adminUser)loadAdminOrders()}
 
 function showToast(msg){document.getElementById('toastRoot').innerHTML=`<div class="toast">${msg}</div>`;setTimeout(()=>document.getElementById('toastRoot').innerHTML='',3200)}
 function openAuth(mode){document.getElementById('modalRoot').innerHTML=`<div class="modal-backdrop" onclick="if(event.target===this)closeAuth()"><section class="modal"><div style="display:flex;justify-content:space-between;align-items:center"><h2>${mode==='login'?'Welcome back':'Create account'}</h2><button class="btn" onclick="closeAuth()">✕</button></div><p class="muted">নিরাপদ সার্ভার লগইন ব্যবহার করা হচ্ছে।</p><form onsubmit="authSubmit(event,'${mode}')">${mode==='register'?'<label class="muted">নাম</label><input required class="field" id="authName" placeholder="তোমার নাম">':''}<label class="muted">ইমেইল</label><input required type="email" class="field" id="authEmail" placeholder="name@example.com"><label class="muted">পাসওয়ার্ড</label><input required type="password" minlength="8" class="field" id="authPassword" placeholder="কমপক্ষে ৮ অক্ষর"><button class="btn primary" style="width:100%" type="submit">${mode==='login'?'Login':'Register'}</button></form></section></div>`}
