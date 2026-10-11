@@ -139,6 +139,16 @@ async function loadAdminOrders(){const box=document.getElementById('adminOrders'
 async function saveAdminOrder(id){try{const r=await fetch('/api/admin/orders/'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:document.getElementById('st-'+id).value,amount:document.getElementById('am-'+id).value})});const d=await r.json();if(!r.ok)throw new Error(d.error||'সংরক্ষণ হয়নি');showToast('অর্ডার আপডেট হয়েছে');loadAdminOrders()}catch(err){showToast(err.message)}}
 
 
+function renderAuthButtons(){
+ const box = document.getElementById('topActions');
+ if (!box) return;
+ if (user) {
+  box.innerHTML = `<button class="btn" onclick="logoutUser()">Logout</button>`;
+ } else {
+  box.innerHTML = `<button class="btn" onclick="openAuth('login')">Login</button><button class="btn primary" onclick="openAuth('register')">Join</button>`;
+ }
+}
+
 function render(){renderNav();renderAuthButtons();document.getElementById('app').innerHTML=pageContent();if(current==='orders'&&user)loadOrders();if(current==='admin'&&adminUser)loadAdminOrders()}
 
 function showToast(msg){document.getElementById('toastRoot').innerHTML=`<div class="toast">${msg}</div>`;setTimeout(()=>document.getElementById('toastRoot').innerHTML='',3200)}
