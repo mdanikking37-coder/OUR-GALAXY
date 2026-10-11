@@ -70,7 +70,17 @@
 <main class="wrap"><div id="app"></div><div class="footer">© 2026 OUR Galaxy · Preview build · Official affiliation with game publishers is not implied.</div></main>
 <nav class="bottom-nav" id="bottomNav" aria-label="Main navigation"></nav><div id="modalRoot"></div><div id="toastRoot"></div>
 <script>
-const nav=[['Home','⌂','home'],['Tutorial','▤','tutorial'],['Top Up','💎','topup'],['FF IDs','🎮','ids'],['My Orders','▣','orders'],['Profile','♙','profile'],['Offers','⚡','offers'],['Support','☏','support']];let current='home';let user=null;let cart=[];
+const nav=[
+ ['Home','⌂','home'],
+ ['Tutorial','▤','tutorial'],
+ ['Top Up','💎','topup'],
+ ['FF IDs','🎮','ids'],
+ ['My Orders','▣','orders'],
+ ['Wallet','৳','wallet'],
+ ['Profile','♙','profile'],
+ ['Offers','⚡','offers'],
+ ['Support','☏','support']
+];let current='home';let user=null;let cart=[];let current='home';let user=null;let cart=[];
 const products={topup:[{icon:'💎',name:'Free Fire Diamonds',desc:'ডায়মন্ড টপ-আপের জন্য অনুমোদিত সরবরাহকারী যাচাই করে নিন।',price:'প্যাকেজ দেখুন'},{icon:'🎟️',name:'Official Voucher',desc:'অফিশিয়াল বা অনুমোদিত রিডিম ভাউচার।',price:'প্যাকেজ দেখুন'},{icon:'🎁',name:'Weekly / Monthly',desc:'গেমে উপলভ্য সাবস্ক্রিপশন বা পাস—প্রাপ্যতা যাচাইসাপেক্ষ।',price:'প্যাকেজ দেখুন'},{icon:'🪙',name:'PUBG Mobile UC',desc:'গেমের টপ-আপ প্যাকেজ; অনুমোদিত চ্যানেল ব্যবহার করুন।',price:'প্যাকেজ দেখুন'}],ids:[{icon:'🧩',name:'Gaming Profile Review',desc:'আপনার নিজের গেমিং প্রোফাইল সাজানোর গাইড ও চেকলিস্ট।',price:'ফ্রি'},{icon:'🎨',name:'Profile Banner Design',desc:'নিজস্ব গেমিং ব্যানার ও প্রোফাইল আর্ট ডিজাইন সার্ভিস।',price:'৳ ১৫০ থেকে'},{icon:'🎬',name:'Gameplay Highlight Edit',desc:'নিজের gameplay clip থেকে highlight video edit।',price:'৳ ২০০ থেকে'}],offers:[{icon:'🌌',name:'Starter Pack Guide',desc:'নতুন খেলোয়াড়দের জন্য বাজেট অনুযায়ী কেনাকাটার গাইড।',price:'ফ্রি'},{icon:'🎬',name:'Clip Editing Offer',desc:'নিজস্ব gameplay clip-এর ভিডিও এডিটিং।',price:'৳ ২০০ থেকে'}]};
 function setPage(id){current=id;render();window.scrollTo({top:0,behavior:'smooth'})}
 function renderNav(){const make=(mobile)=>nav.map(([label,ico,id],i)=>`<button class="${mobile?'nav-item':'nav-link'} ${current===id?'active':''}" aria-current="${current===id?'page':'false'}" onclick="setPage('${id}')"><span class="ico">${ico}</span><span>${mobile?label:String(i+1).padStart(2,'0')+' '+label}</span></button>`).join('');document.getElementById('bottomNav').innerHTML=make(true);document.getElementById('desktopNav').innerHTML=make(false)}
