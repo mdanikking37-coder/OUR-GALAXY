@@ -1,0 +1,9 @@
+{
+  "name": "our-galaxy",
+  "version": "2.0.0",
+  "private": true,
+  "description": "OUR Galaxy gaming store — dependency-free Node.js starter",
+  "main": "server.js",
+  "scripts": {"start": "node server.js"},
+  "engines": {"node": ">=20"}
+}
