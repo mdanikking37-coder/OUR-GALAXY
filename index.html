@@ -247,11 +247,72 @@ async function reviewFFOrder(e){
 
 function adminPage(){
  if(!adminUser)return `<div class="eyebrow">CONTROL CENTER</div><h1 class="page-title">Admin Dashboard</h1><div class="flow-panel"><h3>অ্যাডমিন লগইন</h3><p class="muted">শুধু সাইট মালিকের অ্যাডমিন পাসওয়ার্ড ব্যবহার করো।</p><form onsubmit="adminLogin(event)"><label class="form-label">Admin username</label><input id="adminName" class="field" value="admin" autocomplete="username" required><label class="form-label">Admin password</label><input id="adminPassword" type="password" class="field" autocomplete="current-password" required><button class="btn primary full-btn">Login to Admin</button></form><div id="adminError" class="muted"></div></div>`;
- return `<div class="eyebrow">CONTROL CENTER</div><div class="admin-head"><div><h1 class="page-title">Admin Dashboard</h1><p class="muted">বাস্তব অর্ডার পরিচালনা</p></div><button class="btn" onclick="adminLogout()">Logout</button></div><div id="adminOrders" class="empty">অর্ডার লোড হচ্ছে…</div><div class="notice">দাম এখনো নির্ধারিত না থাকলে গ্রাহককে আলাদা করে জানাও। অনলাইন পেমেন্ট এই সংস্করণে সংযুক্ত নয়।</div>`;
+
+ return `<div class="eyebrow">CONTROL CENTER</div>
+ <div class="admin-head">
+  <div><h1 class="page-title">Admin Dashboard</h1><p class="muted">অর্ডার ও Wallet পরিচালনা</p></div>
+  <button class="btn" onclick="adminLogout()">Logout</button>
+ </div>
+ <section class="flow-panel">
+  <h3>Wallet জমার অনুরোধ</h3>
+  <div id="adminWalletRequests" class="empty">Wallet-এর অনুরোধ লোড হচ্ছে…</div>
+ </section>
+ <section class="flow-panel" style="margin-top:14px">
+  <h3>অর্ডার পরিচালনা</h3>
+  <div id="adminOrders" class="empty">অর্ডার লোড হচ্ছে…</div>
+ </section>
+ <div class="notice">পেমেন্ট যাচাই করার পরেই Approve করবে।</div>`;
 }
 async function adminLogin(e){e.preventDefault();const out=document.getElementById('adminError');try{const r=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:document.getElementById('adminName').value,password:document.getElementById('adminPassword').value})});const d=await r.json();if(!r.ok)throw new Error(d.error||'লগইন হয়নি');adminUser=true;render();loadAdminOrders()}catch(err){out.textContent=err.message}}
 async function adminLogout(){try{await fetch('/api/admin/logout',{method:'POST'})}catch{}adminUser=false;render()}
 async function loadAdminOrders(){const box=document.getElementById('adminOrders');if(!box)return;try{const r=await fetch('/api/admin/orders');const d=await r.json();if(!r.ok)throw new Error(d.error||'অর্ডার লোড হয়নি');if(!d.orders.length){box.textContent='এখনো কোনো অর্ডার নেই।';return}box.className='admin-table-wrap';box.innerHTML=`<table class="admin-table"><thead><tr><th>Order</th><th>প্যাকেজ / UID</th><th>গ্রাহক</th><th>স্ট্যাটাস</th><th>দাম (৳)</th><th>Save</th></tr></thead><tbody>${d.orders.map(o=>`<tr><td>${escapeHtml(o.order_id)}<br><small>${escapeHtml(o.created_at)}</small></td><td>${escapeHtml(o.item_name)}<br>UID: ${escapeHtml(o.uid)}</td><td>${escapeHtml(o.customer_name)}<br>${escapeHtml(o.email)}</td><td><select class="field" id="st-${escapeHtml(o.order_id)}"><option ${o.status==='Pending'?'selected':''}>Pending</option><option ${o.status==='Price Confirmed'?'selected':''}>Price Confirmed</option><option ${o.status==='Processing'?'selected':''}>Processing</option><option ${o.status==='Completed'?'selected':''}>Completed</option><option ${o.status==='Cancelled'?'selected':''}>Cancelled</option></select></td><td><input class="field" id="am-${escapeHtml(o.order_id)}" type="number" min="0" step="1" value="${o.amount??''}" placeholder="দাম"></td><td><button class="btn primary small" onclick="saveAdminOrder('${escapeHtml(o.order_id)}')">Save</button></td></tr>`).join('')}</tbody></table>`}catch(err){box.textContent=err.message}}
+ async function loadAdminWalletRequests(){
+ const box=document.getElementById('adminWalletRequests');
+ if(!box)return;
+ box.textContent='Wallet-এর অনুরোধ লোড হচ্ছে…';
+ try{
+  const r=await fetch('/api/admin/wallet/requests',{credentials:'same-origin'});
+  const d=await r.json();
+  if(!r.ok)throw new Error(d.error||'অনুরোধ লোড হয়নি');
+  if(!d.requests.length){
+   box.className='empty';
+   box.textContent='এখনো কোনো জমার অনুরোধ নেই।';
+   return;
+  }
+  box.className='grid';
+  box.innerHTML=d.requests.map(x=>`
+   <article class="card">
+    <h3>${escapeHtml(x.customer_name)} · ৳${Number(x.amount).toFixed(2)}</h3>
+    <p class="muted">${escapeHtml(x.method)}<br>ইমেইল: ${escapeHtml(x.email)}<br>Transaction ID: ${escapeHtml(x.transaction_id)}<br>স্ট্যাটাস: ${escapeHtml(x.status)}<br>${escapeHtml(x.created_at)}</p>
+    ${x.status==='Pending'?`
+     <button class="btn primary" onclick="reviewWalletRequest('${escapeHtml(x.request_id)}','approve')">Approve</button>
+     <button class="btn" onclick="reviewWalletRequest('${escapeHtml(x.request_id)}','reject')">Reject</button>
+    `:''}
+   </article>
+  `).join('');
+ }catch(err){
+  box.textContent=err.message||'Wallet-এর অনুরোধ লোড করা যায়নি।';
+ }
+}
+
+async function reviewWalletRequest(id,action){
+ const label=action==='approve'?'অনুমোদন':'বাতিল';
+ if(!confirm('পেমেন্ট যাচাই করে '+label+' করতে চাও?'))return;
+ try{
+  const r=await fetch('/api/admin/wallet/requests/'+encodeURIComponent(id),{
+   method:'PATCH',
+   headers:{'Content-Type':'application/json'},
+   credentials:'same-origin',
+   body:JSON.stringify({action})
+  });
+  const d=await r.json();
+  if(!r.ok)throw new Error(d.error||'অনুরোধ আপডেট হয়নি');
+  showToast(d.message||'Wallet অনুরোধ আপডেট হয়েছে');
+  await loadAdminWalletRequests();
+ }catch(err){
+  showToast(err.message||'সার্ভারের সঙ্গে সংযোগ করা যায়নি।');
+ }
+}
 async function saveAdminOrder(id){try{const r=await fetch('/api/admin/orders/'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:document.getElementById('st-'+id).value,amount:document.getElementById('am-'+id).value})});const d=await r.json();if(!r.ok)throw new Error(d.error||'সংরক্ষণ হয়নি');showToast('অর্ডার আপডেট হয়েছে');loadAdminOrders()}catch(err){showToast(err.message)}}
 
 
@@ -265,7 +326,7 @@ function renderAuthButtons(){
  }
 }
 
-function render(){renderNav();renderAuthButtons();document.getElementById('app').innerHTML=pageContent();if(current==='orders'&&user)loadOrders();if(current==='wallet'&&user)loadWallet();if(current==='admin'&&adminUser)loadAdminOrders()}
+function render(){renderNav();renderAuthButtons();document.getElementById('app').innerHTML=pageContent();if(current==='orders'&&user)loadOrders();if(current==='wallet'&&user)loadWallet();if(current==='admin'&&adminUser){loadAdminOrders();loadAdminWalletRequests()}}
 
 function showToast(msg){document.getElementById('toastRoot').innerHTML=`<div class="toast">${msg}</div>`;setTimeout(()=>document.getElementById('toastRoot').innerHTML='',3200)}
 function openAuth(mode){document.getElementById('modalRoot').innerHTML=`<div class="modal-backdrop" onclick="if(event.target===this)closeAuth()"><section class="modal"><div style="display:flex;justify-content:space-between;align-items:center"><h2>${mode==='login'?'Welcome back':'Create account'}</h2><button class="btn" onclick="closeAuth()">✕</button></div><p class="muted">নিরাপদ সার্ভার লগইন ব্যবহার করা হচ্ছে।</p><form onsubmit="authSubmit(event,'${mode}')">${mode==='register'?'<label class="muted">নাম</label><input required class="field" id="authName" placeholder="তোমার নাম">':''}<label class="muted">ইমেইল</label><input required type="email" class="field" id="authEmail" placeholder="name@example.com"><label class="muted">পাসওয়ার্ড</label><input required type="password" minlength="8" class="field" id="authPassword" placeholder="কমপক্ষে ৮ অক্ষর"><button class="btn primary" style="width:100%" type="submit">${mode==='login'?'Login':'Register'}</button></form></section></div>`}
