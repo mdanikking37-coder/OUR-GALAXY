@@ -16,7 +16,28 @@ const ADMIN_USER = process.env.ADMIN_USERNAME || 'admin';
 const ADMIN_PASS = process.env.ADMIN_PASSWORD || '';
 const SESSION_SECRET = process.env.SESSION_SECRET || '';
 let store;
-try{store=JSON.parse(fs.readFileSync(DB,'utf8'))}catch{store={users:[],orders:[]};save()}
+
+try {
+  store = JSON.parse(fs.readFileSync(DB, 'utf8'));
+} catch {
+  store = { users: [], orders: [] };
+}
+
+// পুরোনো ডেটা অক্ষত রেখে Wallet-এর জায়গা তৈরি
+if (!Array.isArray(store.users)) store.users = [];
+if (!Array.isArray(store.orders)) store.orders = [];
+if (!Array.isArray(store.walletRequests)) store.walletRequests = [];
+if (!Array.isArray(store.walletTransactions)) store.walletTransactions = [];
+if (!store.walletBalances || typeof store.walletBalances !== 'object' ||
+    Array.isArray(store.walletBalances)) {
+  store.walletBalances = {};
+}
+
+function save() {
+  fs.writeFileSync(DB, JSON.stringify(store, null, 2), 'utf8');
+}
+
+save();
 function save(){fs.writeFileSync(DB,JSON.stringify(store,null,2),'utf8')}
 const sessions = new Map();
 const products={ff25:{diamonds:25,label:'Starter Pack'},ff50:{diamonds:50,label:'Mini Pack'},ff100:{diamonds:100,label:'Value Pack'},ff210:{diamonds:210,label:'Plus Pack'},ff530:{diamonds:530,label:'Pro Pack'},ff1080:{diamonds:1080,label:'Max Pack'}};
