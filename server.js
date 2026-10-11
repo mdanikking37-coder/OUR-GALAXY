@@ -53,7 +53,81 @@ function needAdmin(req,res){const s=auth(req);if(!s||s.type!=='admin'){send(res,
 function hashPassword(p,salt=crypto.randomBytes(16).toString('hex')){return new Promise((resolve,reject)=>crypto.scrypt(p,salt,64,(e,k)=>e?reject(e):resolve({salt,hash:k.toString('hex')})))}
 async function checkPassword(p,record){const k=await hashPassword(p,record.salt);return crypto.timingSafeEqual(Buffer.from(k.hash,'hex'),Buffer.from(record.hash,'hex'))}
 const loginAttempts=new Map();function limited(ip){const now=Date.now(),a=loginAttempts.get(ip)||{n:0,t:now};if(now-a.t>600000){a.n=0;a.t=now}a.n++;loginAttempts.set(ip,a);return a.n>12}
+function walletBalance(userId) {
+  return Number(store.walletBalances[userId] || 0);
+}
 async function api(req,res,url){const ip=req.socket.remoteAddress||'unknown';
+
+ if (req.method === 'GET' && url.pathname === '/api/wallet') {
+  const u = needUser(req, res);
+  if (!u) return;
+
+  return send(res, 200, {
+    balance: walletBalance(u.id),
+    requests: store.walletRequests
+      .filter(r => r.user_id === u.id)
+      .map(({request_id, method, amount, transaction_id, status, created_at}) =>
+        ({request_id, method, amount, transaction_id, status, created_at}))
+      .slice(0, 50),
+    transactions: store.walletTransactions
+      .filter(t => t.user_id === u.id)
+      .slice(0, 50)
+  });
+ }
+
+ if (req.method === 'POST' && url.pathname === '/api/wallet/deposit') {
+  const u = needUser(req, res);
+  if (!u) return;
+
+  const b = await readBody(req);
+  const method = String(b.method || '');
+  const amount = Number(b.amount);
+  const transactionId = String(b.transaction_id || '').trim();
+
+  if (!['bKash', 'Nagad'].includes(method)) {
+    return send(res, 400, {error: 'বিকাশ বা নগদ বেছে নাও।'});
+  }
+
+  if (!Number.isSafeInteger(amount) || amount < 10 || amount > 50000) {
+    return send(res, 400, {error: '১০ থেকে ৫০,০০০ টাকার মধ্যে পরিমাণ দাও।'});
+  }
+
+  if (transactionId.length < 5 || transactionId.length > 100) {
+    return send(res, 400, {error: 'সঠিক Transaction ID দাও।'});
+  }
+
+  const duplicate = store.walletRequests.some(r =>
+    r.method === method &&
+    r.transaction_id.toLowerCase() === transactionId.toLowerCase()
+  );
+
+  if (duplicate) {
+    return send(res, 409, {error: 'এই Transaction ID আগে জমা দেওয়া হয়েছে।'});
+  }
+
+  const request = {
+    request_id: crypto.randomUUID(),
+    user_id: u.id,
+    method,
+    amount,
+    transaction_id: transactionId,
+    status: 'Pending',
+    created_at: new Date().toISOString()
+  };
+
+  store.walletRequests.unshift(request);
+  save();
+
+  return send(res, 201, {
+    message: 'অনুরোধ জমা হয়েছে। অ্যাডমিন যাচাই করার পর ব্যালেন্স যোগ হবে।',
+    request: {
+      request_id: request.request_id,
+      amount: request.amount,
+      status: request.status
+    }
+  });
+ }
+                                
  if(req.method==='POST'&&url.pathname==='/api/register'){
   if(limited(ip))return send(res,429,{error:'অনেকবার চেষ্টা হয়েছে। কিছুক্ষণ পরে আবার চেষ্টা করো।'});
   const b=await readBody(req),name=String(b.name||'').trim(),email=String(b.email||'').trim().toLowerCase(),password=String(b.password||'');
@@ -75,6 +149,88 @@ async function api(req,res,url){const ip=req.socket.remoteAddress||'unknown';
  }
  if(req.method==='GET'&&url.pathname==='/api/admin/me'){return auth(req)?.type==='admin'?send(res,200,{ok:true}):send(res,401,{error:'লগইন করা নেই।'})}
  if(req.method==='POST'&&url.pathname==='/api/admin/logout'){clearSession(req,res);return send(res,200,{ok:true})}
+                                
+ if (req.method === 'GET' && url.pathname === '/api/admin/wallet/requests') {
+  if (!needAdmin(req, res)) return;
+
+  return send(res, 200, {
+    requests: store.walletRequests.map(r => ({
+      request_id: r.request_id,
+      user_id: r.user_id,
+      customer_name: store.users.find(u => u.id === r.user_id)?.name || 'Unknown',
+      email: store.users.find(u => u.id === r.user_id)?.email || '',
+      method: r.method,
+      amount: r.amount,
+      transaction_id: r.transaction_id,
+      status: r.status,
+      created_at: r.created_at
+    }))
+  });
+ }
+
+ if (
+  req.method === 'PATCH' &&
+  url.pathname.startsWith('/api/admin/wallet/requests/')
+ ) {
+  if (!needAdmin(req, res)) return;
+
+  const id = decodeURIComponent(url.pathname.split('/').pop());
+  const r = store.walletRequests.find(x => x.request_id === id);
+
+  if (!r) {
+    return send(res, 404, {error: 'পেমেন্ট অনুরোধ পাওয়া যায়নি।'});
+  }
+
+  if (r.status !== 'Pending') {
+    return send(res, 409, {error: 'এই অনুরোধ আগেই নিষ্পত্তি হয়েছে।'});
+  }
+
+  const b = await readBody(req);
+
+  if (!['approve', 'reject'].includes(b.action)) {
+    return send(res, 400, {error: 'সঠিক অ্যাকশন বেছে নাও।'});
+  }
+
+  const userExists = store.users.some(u => u.id === r.user_id);
+  if (!userExists) {
+    return send(res, 404, {error: 'ইউজার অ্যাকাউন্ট পাওয়া যায়নি।'});
+  }
+
+  if (b.action === 'approve') {
+    const oldBalance = walletBalance(r.user_id);
+    const newBalance = oldBalance + r.amount;
+
+    if (!Number.isSafeInteger(newBalance)) {
+      return send(res, 400, {error: 'ব্যালেন্স হিসাব করা যাচ্ছে না।'});
+    }
+
+    store.walletBalances[r.user_id] = newBalance;
+    store.walletTransactions.unshift({
+      transaction_id: crypto.randomUUID(),
+      user_id: r.user_id,
+      type: 'Deposit',
+      amount: r.amount,
+      method: r.method,
+      reference: r.transaction_id,
+      created_at: new Date().toISOString()
+    });
+
+    r.status = 'Approved';
+  } else {
+    r.status = 'Rejected';
+  }
+
+  r.reviewed_at = new Date().toISOString();
+  save();
+
+  return send(res, 200, {
+    message: r.status === 'Approved'
+      ? 'পেমেন্ট অনুমোদিত হয়েছে।'
+      : 'পেমেন্ট বাতিল করা হয়েছে।',
+    status: r.status
+  });
+ }
+
  if(url.pathname==='/api/admin/orders'&&req.method==='GET'){if(!needAdmin(req,res))return;return send(res,200,{orders:store.orders.map(o=>({...o,password:undefined}))})}
  if(url.pathname.startsWith('/api/admin/orders/')&&req.method==='PATCH'){if(!needAdmin(req,res))return;const id=decodeURIComponent(url.pathname.split('/').pop()),o=store.orders.find(x=>x.order_id===id);if(!o)return send(res,404,{error:'অর্ডার পাওয়া যায়নি।'});const b=await readBody(req),statuses=['Pending','Price Confirmed','Processing','Completed','Cancelled'];if(!statuses.includes(b.status))return send(res,400,{error:'সঠিক স্ট্যাটাস বেছে নাও।'});let amount=null;if(b.amount!==''&&b.amount!==null&&b.amount!==undefined){amount=Number(b.amount);if(!Number.isFinite(amount)||amount<0||amount>10000000)return send(res,400,{error:'সঠিক মূল্য লিখো।'})}o.status=b.status;o.amount=amount;o.updated_at=new Date().toISOString();save();return send(res,200,{order:{order_id:o.order_id,status:o.status,amount:o.amount}})}
  return send(res,404,{error:'API endpoint পাওয়া যায়নি।'})
