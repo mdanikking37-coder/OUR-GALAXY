@@ -247,7 +247,19 @@ async function api(req,res,url){const ip=req.socket.remoteAddress||'unknown';
 
  if(url.pathname==='/api/admin/orders'&&req.method==='GET'){if(!needAdmin(req,res))return;return send(res,200,{orders:store.orders.map(o=>({...o,password:undefined}))})}
  if(url.pathname.startsWith('/api/admin/orders/')&&req.method==='PATCH'){if(!needAdmin(req,res))return;const id=decodeURIComponent(url.pathname.split('/').pop()),o=store.orders.find(x=>x.order_id===id);if(!o)return send(res,404,{error:'অর্ডার পাওয়া যায়নি।'});const b=await readBody(req),statuses=['Pending','Price Confirmed','Processing','Completed','Cancelled'];if(!statuses.includes(b.status))return send(res,400,{error:'সঠিক স্ট্যাটাস বেছে নাও।'});let amount=null;if(b.amount!==''&&b.amount!==null&&b.amount!==undefined){amount=Number(b.amount);if(!Number.isFinite(amount)||amount<0||amount>10000000)return send(res,400,{error:'সঠিক মূল্য লিখো।'})}o.status=b.status;o.amount=amount;o.updated_at=new Date().toISOString();save();return send(res,200,{order:{order_id:o.order_id,status:o.status,amount:o.amount}})}
-                                
+ if (req.method === 'GET' && url.pathname === '/api/products') {
+  return send(
+    res,
+    200,
+    {
+      products: Object.entries(store.products).map(([id, p]) => ({
+        id,
+        ...p
+      }))
+    },
+    { 'Access-Control-Allow-Origin': '*' }
+  );
+}                               
 if (req.method === 'GET' && url.pathname === '/api/admin/products') {
   if (!needAdmin(req, res)) return;
   return send(res, 200, { products: Object.entries(store.products).map(([id, p]) => ({ id, ...p })) });
