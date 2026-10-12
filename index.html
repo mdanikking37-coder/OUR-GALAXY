@@ -105,17 +105,24 @@ function walletPage(){
  </section>
  <section class="flow-panel" style="margin-top:14px">
   <h3>টাকা জমা দাও</h3>
-  <p class="muted">bKash অথবা Nagad দিয়ে পেমেন্ট করার পর তথ্য জমা দাও।</p>
+  <p class="muted">bKash, Nagad অথবা Rocket Personal দিয়ে Send Money করে পেমেন্টের তথ্য জমা দাও।</p>
   <form id="walletDepositForm" onsubmit="submitWalletDeposit(event)">
    <label class="form-label" for="walletMethod">পেমেন্ট মাধ্যম</label>
    <select class="field" id="walletMethod" required>
-    <option value="bKash">bKash</option>
-    <option value="Nagad">Nagad</option>
-   </select>
+    <option value="bKash">bKash Personal</option>
+    <option value="Nagad">Nagad Personal</option>
+    <option value="Rocket">Rocket Personal</option>
+</select>
    <label class="form-label" for="walletAmount">টাকার পরিমাণ (৳)</label>
-   <input class="field" id="walletAmount" type="number" min="10" max="50000" step="1" placeholder="যেমন: 100" required>
+   <input class="field" id="walletAmount" type="number" min="20" max="50000" step="1" placeholder="যেমন: 100" required>
+   <div class="notice" style="margin:12px 0">
+  <h3>Send Money করুন</h3>
+  <p>নির্বাচিত পেমেন্ট মাধ্যমের Personal নম্বরে টাকা পাঠান।</p>
+  <h2>01868455970</h2>
+  <p><strong>সতর্কতা:</strong> অবশ্যই সঠিক Transaction ID প্রদান করবেন।</p>
+</div>
    <label class="form-label" for="walletTransactionId">Transaction ID</label>
-   <input class="field" id="walletTransactionId" maxlength="100" autocomplete="off" placeholder="পেমেন্টের Transaction ID" required>
+   <input class="field" id="walletTransactionId" maxlength="100" autocomplete="off" placeholder="সঠিক Transaction ID এখানে পেস্ট করুন" required>
    <button class="btn primary full-btn" type="submit">জমার অনুরোধ পাঠাও</button>
   </form>
   <div id="walletMessage" class="notice" style="display:none;margin-top:12px" aria-live="polite"></div>
