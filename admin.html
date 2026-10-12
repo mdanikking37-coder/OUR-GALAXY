@@ -1,0 +1,188 @@
+
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OUR GALAXY Admin</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:18px;background:#0b1020;color:#fff;font-family:Arial,sans-serif}
+main{max-width:760px;margin:auto}
+h1{color:#8db8ff}
+.card{background:#17213a;padding:18px;border-radius:12px;margin:15px 0;border:1px solid #344360}
+input,button{width:100%;padding:12px;margin:6px 0;border-radius:7px;font-size:15px}
+input{background:#0b1020;color:white;border:1px solid #52617f}
+button{background:#3977f6;color:white;border:0;font-weight:bold;cursor:pointer}
+button.secondary{background:#46536b}
+small,.muted{color:#bdc8dd;line-height:1.6}
+.package{border-top:1px solid #344360;padding:12px 0}
+#dashboard{display:none}
+</style>
+</head>
+<body>
+<main>
+<h1>OUR GALAXY</h1>
+<p class="muted">Admin Dashboard · Diamond Management</p>
+
+<section class="card" id="login">
+<h3>Admin Login</h3>
+<input id="username" placeholder="Admin Username" autocomplete="username">
+<input id="password" type="password" placeholder="Admin Password" autocomplete="current-password">
+<button id="loginBtn" onclick="loginAdmin()">Login</button>
+</section>
+
+<section id="dashboard">
+<div class="card">
+<h3>💎 নতুন Diamond Package</h3>
+<input id="newId" placeholder="Package ID (যেমন ff310)">
+<input id="newLabel" placeholder="Package Name (যেমন Special Pack)">
+<input id="newDiamonds" type="number" min="1" placeholder="Diamond সংখ্যা">
+<input id="newPrice" type="number" min="1" max="1000000" placeholder="দাম (৳)">
+<button onclick="addPackage()">নতুন প্যাকেজ যোগ করো</button>
+</div>
+
+<div class="card">
+<h3>📦 প্যাকেজ ও দাম পরিবর্তন</h3>
+<button class="secondary" onclick="loadProducts()">তালিকা রিফ্রেশ</button>
+<div id="products"></div>
+</div>
+</section>
+
+<div class="card">
+<p id="message" class="muted">অ্যাডমিন লগইন করো।</p>
+</div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function safe(value) {
+  return String(value ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;',
+    '"':'&quot;',"'":'&#39;'
+  })[c]);
+}
+
+async function api(path, options = {}) {
+  const response = await fetch('/api' + path, {
+    ...options,
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers || {})
+    }
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+async function loginAdmin() {
+  $('loginBtn').disabled = true;
+  $('message').textContent = 'লগইন হচ্ছে...';
+
+  try {
+    await api('/admin/login', {
+      method: 'POST',
+      body: JSON.stringify({
+        username: $('username').value,
+        password: $('password').value
+      })
+    });
+
+    $('login').style.display = 'none';
+    $('dashboard').style.display = 'block';
+    await loadProducts();
+    $('message').textContent = 'অ্যাডমিন লগইন সফল।';
+  } catch (error) {
+    $('message').textContent = 'লগইন ব্যর্থ: ' + error.message;
+  } finally {
+    $('loginBtn').disabled = false;
+  }
+}
+
+async function loadProducts() {
+  try {
+    const data = await api('/admin/products');
+    $('products').innerHTML = '';
+
+    if (!data.products || data.products.length === 0) {
+      $('products').textContent = 'কোনো প্যাকেজ পাওয়া যায়নি।';
+      return;
+    }
+
+    for (const p of data.products) {
+      const item = document.createElement('div');
+      item.className = 'package';
+      item.innerHTML = `
+        <strong>${safe(p.id)}</strong>
+        <input id="label-${safe(p.id)}" value="${safe(p.label)}" placeholder="প্যাকেজের নাম">
+        <input id="diamonds-${safe(p.id)}" type="number" min="1" value="${safe(p.diamonds)}" placeholder="Diamond সংখ্যা">
+        <input id="price-${safe(p.id)}" type="number" min="1" max="1000000" value="${p.price == null ? '' : safe(p.price)}" placeholder="দাম (৳)">
+        <button class="saveBtn">দাম ও প্যাকেজ সংরক্ষণ</button>
+      `;
+
+      item.querySelector('.saveBtn').addEventListener('click', () => updatePackage(p.id));
+      $('products').appendChild(item);
+    }
+  } catch (error) {
+    $('message').textContent = 'প্যাকেজ লোড হয়নি: ' + error.message;
+  }
+}
+
+async function updatePackage(id) {
+  const label = $('label-' + id).value.trim();
+  const diamonds = Number($('diamonds-' + id).value);
+  const price = Number($('price-' + id).value);
+
+  if (!label || !Number.isSafeInteger(diamonds) || diamonds < 1 ||
+      !Number.isSafeInteger(price) || price < 1 || price > 1000000) {
+    $('message').textContent = 'সঠিক নাম, Diamond সংখ্যা ও দাম লিখো।';
+    return;
+  }
+
+  try {
+    await api('/admin/products/' + encodeURIComponent(id), {
+      method: 'PATCH',
+      body: JSON.stringify({label, diamonds, price})
+    });
+    $('message').textContent = 'প্যাকেজ ' + id + ' সংরক্ষিত হয়েছে।';
+    await loadProducts();
+  } catch (error) {
+    $('message').textContent = 'সংরক্ষণ হয়নি: ' + error.message;
+  }
+}
+
+async function addPackage() {
+  const id = $('newId').value.trim();
+  const label = $('newLabel').value.trim();
+  const diamonds = Number($('newDiamonds').value);
+  const price = Number($('newPrice').value);
+
+  if (!/^[a-zA-Z0-9_-]{2,40}$/.test(id) || !label ||
+      !Number.isSafeInteger(diamonds) || diamonds < 1 ||
+      !Number.isSafeInteger(price) || price < 1 || price > 1000000) {
+    $('message').textContent = 'সঠিক Package ID, নাম, Diamond সংখ্যা ও দাম দাও।';
+    return;
+  }
+
+  try {
+    await api('/admin/products', {
+      method: 'POST',
+      body: JSON.stringify({id, label, diamonds, price})
+    });
+    $('message').textContent = 'নতুন প্যাকেজ যোগ হয়েছে।';
+    $('newId').value = '';
+    $('newLabel').value = '';
+    $('newDiamonds').value = '';
+    $('newPrice').value = '';
+    await loadProducts();
+  } catch (error) {
+    $('message').textContent = 'প্যাকেজ যোগ হয়নি: ' + error.message;
+  }
+}
+</script>
+</body>
+</html>
