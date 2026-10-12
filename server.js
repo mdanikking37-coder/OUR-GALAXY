@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const URL = require('node:url').URL;
+const { Pool } = require('pg');
 const ROOT = __dirname;
 const DATA = path.join(ROOT, 'data');
 const DB = path.join(DATA, 'store.json');
