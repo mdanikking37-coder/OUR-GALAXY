@@ -253,7 +253,12 @@ async function reviewFFOrder(e){
 
 
 function adminPage(){
- if(!adminUser)return `<div class="eyebrow">CONTROL CENTER</div><h1 class="page-title">Admin Dashboard</h1><div class="flow-panel"><h3>অ্যাডমিন লগইন</h3><p class="muted">শুধু সাইট মালিকের অ্যাডমিন পাসওয়ার্ড ব্যবহার করো।</p><form onsubmit="adminLogin(event)"><label class="form-label">Admin username</label><input id="adminName" class="field" value="admin" autocomplete="username" required><label class="form-label">Admin password</label><input id="adminPassword" type="password" class="field" autocomplete="current-password" required><button class="btn primary full-btn">Login to Admin</button></form><div id="adminError" class="muted"></div></div>`;
+ if(!adminUser)return `<div class="eyebrow">CONTROL CENTER</div><h1 class="page-title">Admin Dashboard</h1><div class="flow-panel"><h3>অ্যাডমিন লগইন</h3><p class="muted">শুধু সাইট মালিকের অ্যাডমিন পাসওয়ার্ড ব্যবহার করো।</p><form onsubmit="adminLogin(event)"><label class="form-label">Admin username</label><input id="adminName" class="field" value="admin" autocomplete="username" required><label class="form-label">Admin password</label>
+<div style="position:relative">
+  <input id="adminPassword" type="password" class="field" autocomplete="current-password" required>
+  <button type="button" onclick="const p=document.getElementById('adminPassword');p.type=p.type==='password'?'text':'password';this.textContent=p.type==='password'?'👁️':'🙈';">👁️</button>
+</div>
+<button class="btn primary full-btn">Login to Admin</button></form><div id="adminError" class="muted"></div></div>`;
 
  return `<div class="eyebrow">CONTROL CENTER</div>
  <div class="admin-head">
