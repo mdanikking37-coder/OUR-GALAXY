@@ -84,12 +84,12 @@ async function api(req,res,url){const ip=req.socket.remoteAddress||'unknown';
   const amount = Number(b.amount);
   const transactionId = String(b.transaction_id || '').trim();
 
-  if (!['bKash', 'Nagad'].includes(method)) {
-    return send(res, 400, {error: 'বিকাশ বা নগদ বেছে নাও।'});
+  if (!['bKash', 'Nagad', 'Rocket'].includes(method)) {
+    return send(res, 400, {error: 'bKash, Nagad অথবা Rocket বেছে নাও।'});
   }
 
-  if (!Number.isSafeInteger(amount) || amount < 10 || amount > 50000) {
-    return send(res, 400, {error: '১০ থেকে ৫০,০০০ টাকার মধ্যে পরিমাণ দাও।'});
+  if (!Number.isSafeInteger(amount) || amount < 20 || amount > 50000) {
+    return send(res, 400, {error: '২০ থেকে ৫০,০০০ টাকার মধ্যে পরিমাণ দাও।'});
   }
 
   if (transactionId.length < 5 || transactionId.length > 100) {
