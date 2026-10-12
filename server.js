@@ -41,7 +41,20 @@ function save() {
 save();
 function save(){fs.writeFileSync(DB,JSON.stringify(store,null,2),'utf8')}
 const sessions = new Map();
-const products={ff25:{diamonds:25,label:'Starter Pack'},ff50:{diamonds:50,label:'Mini Pack'},ff100:{diamonds:100,label:'Value Pack'},ff210:{diamonds:210,label:'Plus Pack'},ff530:{diamonds:530,label:'Pro Pack'},ff1080:{diamonds:1080,label:'Max Pack'}};
+
+if (!store.products || typeof store.products !== 'object' || Array.isArray(store.products)) {
+  store.products = {
+    ff25: { diamonds: 25, label: 'Starter Pack' },
+    ff50: { diamonds: 50, label: 'Mini Pack' },
+    ff100: { diamonds: 100, label: 'Value Pack' },
+    ff210: { diamonds: 210, label: 'Plus Pack' },
+    ff530: { diamonds: 530, label: 'Pro Pack' },
+    ff1080: { diamonds: 1080, label: 'Max Pack' }
+  };
+  save();
+}
+const products = store.products;
+
 const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.ico':'image/x-icon'};
 function send(res,status,data,headers={}){const body=typeof data==='string'?data:JSON.stringify(data);res.writeHead(status,{'Content-Type':typeof data==='string'?'text/plain; charset=utf-8':'application/json; charset=utf-8','X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','X-Frame-Options':'DENY','Cache-Control':'no-store',...headers});res.end(body)}
 function cookie(req,name){const s=req.headers.cookie||'';const p=s.split(';').map(x=>x.trim()).find(x=>x.startsWith(name+'='));return p?decodeURIComponent(p.slice(name.length+1)):''}
@@ -234,6 +247,56 @@ async function api(req,res,url){const ip=req.socket.remoteAddress||'unknown';
 
  if(url.pathname==='/api/admin/orders'&&req.method==='GET'){if(!needAdmin(req,res))return;return send(res,200,{orders:store.orders.map(o=>({...o,password:undefined}))})}
  if(url.pathname.startsWith('/api/admin/orders/')&&req.method==='PATCH'){if(!needAdmin(req,res))return;const id=decodeURIComponent(url.pathname.split('/').pop()),o=store.orders.find(x=>x.order_id===id);if(!o)return send(res,404,{error:'অর্ডার পাওয়া যায়নি।'});const b=await readBody(req),statuses=['Pending','Price Confirmed','Processing','Completed','Cancelled'];if(!statuses.includes(b.status))return send(res,400,{error:'সঠিক স্ট্যাটাস বেছে নাও।'});let amount=null;if(b.amount!==''&&b.amount!==null&&b.amount!==undefined){amount=Number(b.amount);if(!Number.isFinite(amount)||amount<0||amount>10000000)return send(res,400,{error:'সঠিক মূল্য লিখো।'})}o.status=b.status;o.amount=amount;o.updated_at=new Date().toISOString();save();return send(res,200,{order:{order_id:o.order_id,status:o.status,amount:o.amount}})}
+                                
+if (req.method === 'GET' && url.pathname === '/api/admin/products') {
+  if (!needAdmin(req, res)) return;
+  return send(res, 200, { products: Object.entries(store.products).map(([id, p]) => ({ id, ...p })) });
+}
+
+if (req.method === 'POST' && url.pathname === '/api/admin/products') {
+  if (!needAdmin(req, res)) return;
+  const b = await readBody(req);
+  const id = String(b.id || '').trim();
+  const label = String(b.label || '').trim();
+  const diamonds = Number(b.diamonds);
+  const price = Number(b.price);
+
+  if (!/^[a-zA-Z0-9_-]{2,40}$/.test(id) || store.products[id]) {
+    return send(res, 400, { error: 'প্যাকেজ ID ভুল অথবা আগে থেকেই আছে।' });
+  }
+  if (!label || label.length > 80 ||
+      !Number.isSafeInteger(diamonds) || diamonds < 1 ||
+      !Number.isSafeInteger(price) || price < 1 || price > 1000000) {
+    return send(res, 400, { error: 'প্যাকেজের নাম, ডায়মন্ড ও দাম সঠিকভাবে দাও।' });
+  }
+
+  store.products[id] = { label, diamonds, price };
+  save();
+  return send(res, 201, { message: 'নতুন প্যাকেজ যোগ হয়েছে।', product: { id, ...store.products[id] } });
+}
+
+if (req.method === 'PATCH' && url.pathname.startsWith('/api/admin/products/')) {
+  if (!needAdmin(req, res)) return;
+  const id = decodeURIComponent(url.pathname.split('/').pop());
+  const p = store.products[id];
+  if (!p) return send(res, 404, { error: 'প্যাকেজ পাওয়া যায়নি।' });
+
+  const b = await readBody(req);
+  const label = String(b.label ?? p.label).trim();
+  const diamonds = Number(b.diamonds ?? p.diamonds);
+  const price = Number(b.price ?? p.price);
+
+  if (!label || label.length > 80 ||
+      !Number.isSafeInteger(diamonds) || diamonds < 1 ||
+      !Number.isSafeInteger(price) || price < 1 || price > 1000000) {
+    return send(res, 400, { error: 'নাম, ডায়মন্ড বা দাম সঠিক নয়।' });
+  }
+
+  Object.assign(p, { label, diamonds, price });
+  save();
+  return send(res, 200, { message: 'প্যাকেজ আপডেট হয়েছে।', product: { id, ...p } });
+}
+
  return send(res,404,{error:'API endpoint পাওয়া যায়নি।'})
 }
 const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,'http://localhost');if(url.pathname.startsWith('/api/'))return await api(req,res,url);let p=decodeURIComponent(url.pathname);if(p==='/')p='/index.html';const file=path.resolve(ROOT,'.'+p);if(!file.startsWith(ROOT+path.sep))return send(res,403,'Forbidden');fs.readFile(file,(err,data)=>{if(err)return send(res,404,'Not found');res.writeHead(200,{'Content-Type':mime[path.extname(file)]||'application/octet-stream','X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','X-Frame-Options':'DENY'});res.end(data)})}catch(e){console.error(e);send(res,e.message==='Invalid JSON'?400:500,{error:e.message==='Invalid JSON'?'সঠিক তথ্য পাঠাও।':'সার্ভারে সমস্যা হয়েছে।'})}});
