@@ -122,9 +122,11 @@ async function loadProducts() {
         <input id="diamonds-${safe(p.id)}" type="number" min="1" value="${safe(p.diamonds)}" placeholder="Diamond সংখ্যা">
         <input id="price-${safe(p.id)}" type="number" min="1" max="1000000" value="${p.price == null ? '' : safe(p.price)}" placeholder="দাম (৳)">
         <button class="saveBtn">দাম ও প্যাকেজ সংরক্ষণ</button>
+        <button class="deleteBtn" style="background:#b42318">প্যাকেজ মুছে ফেলো</button>
       `;
 
       item.querySelector('.saveBtn').addEventListener('click', () => updatePackage(p.id));
+      item.querySelector('.deleteBtn').addEventListener('click', () => deletePackage(p.id));
       $('products').appendChild(item);
     }
   } catch (error) {
@@ -152,6 +154,21 @@ async function updatePackage(id) {
     await loadProducts();
   } catch (error) {
     $('message').textContent = 'সংরক্ষণ হয়নি: ' + error.message;
+  }
+}
+
+async function deletePackage(id) {
+  if (!confirm('এই প্যাকেজটি মুছে ফেলতে চাও?')) return;
+
+  try {
+    await api('/admin/products/' + encodeURIComponent(id), {
+      method: 'DELETE'
+    });
+
+    $('message').textContent = 'প্যাকেজ মুছে ফেলা হয়েছে।';
+    await loadProducts();
+  } catch (error) {
+    $('message').textContent = 'মুছে ফেলা যায়নি: ' + error.message;
   }
 }
 
