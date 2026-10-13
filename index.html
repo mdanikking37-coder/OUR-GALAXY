@@ -136,14 +136,42 @@ function walletPage(){
  </section>
  <div class="notice" style="margin-top:14px">সতর্কতা: পেমেন্টের সঠিক তথ্য দাও। অ্যাডমিন যাচাই না করা পর্যন্ত ব্যালেন্স যোগ হবে না। শুধু Transaction ID জমা দিলেই পেমেন্ট নিশ্চিত হয় না।</div>`;
 }
-const ffPackages = [
- {id:'ff25',diamonds:25,label:'Starter Pack',note:'ছোট প্যাক'},
- {id:'ff50',diamonds:50,label:'Mini Pack',note:'দ্রুত টপ-আপ'},
- {id:'ff100',diamonds:100,label:'Value Pack',note:'জনপ্রিয় পছন্দ'},
- {id:'ff210',diamonds:210,label:'Plus Pack',note:'ভ্যালু প্যাক'},
- {id:'ff530',diamonds:530,label:'Pro Pack',note:'বড় প্যাক'},
- {id:'ff1080',diamonds:1080,label:'Max Pack',note:'বড় ডায়মন্ড প্যাক'}
+
+let ffPackages = [
+  {id:'ff25', diamonds:25, label:'Starter Pack', note:'ছোট প্যাক'},
+  {id:'ff50', diamonds:50, label:'Mini Pack', note:'দ্রুত টপ-আপ'},
+  {id:'ff100', diamonds:100, label:'Value Pack', note:'জনপ্রিয় পছন্দ'},
+  {id:'ff210', diamonds:210, label:'Plus Pack', note:'ভ্যালু প্যাক'},
+  {id:'ff530', diamonds:530, label:'Pro Pack', note:'বড় প্যাক'},
+  {id:'ff1080', diamonds:1080, label:'Max Pack', note:'বড় ডায়মন্ড প্যাক'}
 ];
+
+async function loadFFPackages() {
+  try {
+    const response = await fetch(
+      'https://our-galaxy-api.onrender.com/api/products'
+    );
+    const data = await response.json();
+
+    if (!response.ok || !Array.isArray(data.products)) return;
+
+    ffPackages = data.products.map(p => ({
+      ...p,
+      note: p.note || 'ডায়মন্ড প্যাক'
+    }));
+
+    if (!ffPackages.some(p => p.id === selectedFFPackage)) {
+      selectedFFPackage = ffPackages[0]?.id || '';
+    }
+
+    if (current === 'topup' || current === 'home') {
+      render();
+    }
+  } catch (error) {
+    console.error('প্যাকেজ লোড করা যায়নি:', error);
+  }
+}
+
 let selectedFFPackage = 'ff210';
 let adminUser = false;
 function topupPage(){
@@ -361,6 +389,8 @@ async function loadOrders(){const box=document.getElementById('ordersList');if(!
 function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 async function restoreSession(){try{const ar=await fetch('/api/admin/me');if(ar.ok)adminUser=true;const r=await fetch('/api/me',{credentials:'same-origin'});if(r.ok){const d=await r.json();user=d.user;render()}}catch{}}
 function previewVideo(){let v=document.getElementById('videoUrl').value.trim(),out=document.getElementById('videoPreview');try{let u=new URL(v);if(!['https:'].includes(u.protocol)||!['youtube.com','www.youtube.com','youtu.be','www.youtube-nocookie.com'].includes(u.hostname)){out.textContent='YouTube-এর একটি বৈধ https লিংক দাও।';return}out.innerHTML=`লিংক ফরম্যাট ঠিক আছে: <a style="color:var(--accent2)" href="${u.href}" target="_blank" rel="noopener noreferrer">ভিডিও খুলুন</a> (এখনো পণ্যের সঙ্গে সংরক্ষণ করা হয়নি)।`}catch{out.textContent='সম্পূর্ণ বৈধ ভিডিও URL লিখো।'}}
-render();restoreSession();
+render();
+restoreSession();
+loadFFPackages();
 </script>
 </body></html>
