@@ -164,19 +164,78 @@ async function loadFFPackages() {
       selectedFFPackage = ffPackages[0]?.id || '';
     }
 
-    if (current === 'topup' || current === 'home') {
-      render();
-    }
+   
+if (current === 'topup' || current === 'home') {
+  render();
+}
+
   } catch (error) {
     console.error('প্যাকেজ লোড করা যায়নি:', error);
   }
 }
+async function loadMemberships() {
+  const container = document.getElementById('membershipCards');
+  if (!container) return;
 
+  try {
+    const response = await fetch(
+      'https://our-galaxy-api.onrender.com/api/memberships'
+    );
+
+    const data = await response.json();
+    if (!response.ok || !Array.isArray(data.memberships)) {
+      throw new Error('Membership লোড হয়নি');
+    }
+
+    container.innerHTML = '';
+
+    data.memberships.forEach(item => {
+      const card = document.createElement('div');
+      card.style.cssText =
+        'background:#fff;border-radius:16px;padding:12px;text-align:center;box-shadow:0 3px 12px #0002;border:1px solid #f9c74f;';
+
+      if (item.image) {
+        const img = document.createElement('img');
+        img.src = item.image;
+        img.alt = item.name;
+        img.style.cssText =
+          'width:100%;height:110px;object-fit:contain;border-radius:10px;';
+        card.appendChild(img);
+      }
+
+      const name = document.createElement('h3');
+      name.textContent = item.name;
+      name.style.cssText = 'color:#6d28d9;margin:10px 0;';
+      card.appendChild(name);
+
+      const price = document.createElement('p');
+      price.textContent = '৳' + item.price;
+      price.style.cssText =
+        'font-size:22px;font-weight:bold;color:#ea580c;margin:8px;';
+      card.appendChild(price);
+
+      container.appendChild(card);
+    });
+  } catch (error) {
+    container.textContent = 'Membership লোড করা যায়নি।';
+    console.error(error);
+  }
+}
 let selectedFFPackage = 'ff210';
 let adminUser = false;
 function topupPage(){
- const selected=ffPackages.find(p=>p.id===selectedFFPackage)||ffPackages[0];
- return `<div class="eyebrow">GAME TOP-UP · 01</div><h1 class="page-title">Free Fire Top Up</h1>
+
+
+
+return `<div id="membershipSection" style="margin:20px 0;padding:20px;border-radius:20px;background:linear-gradient(135deg,#fff7d6,#ffe5f1,#e0f2ff);box-shadow:0 0 22px #ffd166;">
+  <h2 style="text-align:center;color:#7c2d12;">✨ OUR GALAXY MEMBERSHIP ✨</h2>
+  <p style="text-align:center;color:#6b21a8;">আপনার পছন্দের Membership বেছে নিন</p>
+  <div id="membershipCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:12px;">
+    <p style="text-align:center;">Membership লোড হচ্ছে...</p>
+  </div>
+</div>
+<div class="eyebrow">GAME TOP-UP · 01</div><h1 class="page-title">Free Fire Top Up</h1>
+
  <p class="muted">প্যাকেজ বেছে নাও, Player UID দাও এবং অর্ডারের তথ্য যাচাই করো।</p>
  <section class="topup-banner"><div><span class="pill">OUR GALAXY · FREE FIRE</span><h2>Diamonds for your next level. 💎</h2><p>সহজ ধাপে টপ-আপ ফ্লো। সঠিক UID নিশ্চিত করো—ভুল Player ID দিলে ডেলিভারি সমস্যা হতে পারে।</p></div><div class="ff-art" aria-label="Diamond illustration">💎🔥</div></section>
  <div class="steps"><div class="step current"><b>1</b><span>প্যাকেজ বাছাই</span></div><div class="step current"><b>2</b><span>Player ID</span></div><div class="step"><b>3</b><span>রিভিউ</span></div></div>
@@ -369,7 +428,24 @@ function renderAuthButtons(){
  }
 }
 
-function render(){renderNav();renderAuthButtons();document.getElementById('app').innerHTML=pageContent();if(current==='orders'&&user)loadOrders();if(current==='wallet'&&user)loadWallet();if(current==='admin'&&adminUser){loadAdminOrders();loadAdminWalletRequests()}}
+
+function render(){
+  renderNav();
+  renderAuthButtons();
+  document.getElementById('app').innerHTML = pageContent();
+
+  if(current === 'topup'){
+    setTimeout(loadMemberships, 0);
+  }
+
+  if(current === 'orders' && user) loadOrders();
+  if(current === 'wallet' && user) loadWallet();
+
+  if(current === 'admin' && adminUser){
+    loadAdminOrders();
+    loadAdminWalletRequests();
+  }
+}
 
 function showToast(msg){document.getElementById('toastRoot').innerHTML=`<div class="toast">${msg}</div>`;setTimeout(()=>document.getElementById('toastRoot').innerHTML='',3200)}
 function openAuth(mode){document.getElementById('modalRoot').innerHTML=`<div class="modal-backdrop" onclick="if(event.target===this)closeAuth()"><section class="modal"><div style="display:flex;justify-content:space-between;align-items:center"><h2>${mode==='login'?'Welcome back':'Create account'}</h2><button class="btn" onclick="closeAuth()">✕</button></div><p class="muted">নিরাপদ সার্ভার লগইন ব্যবহার করা হচ্ছে।</p><form onsubmit="authSubmit(event,'${mode}')">${mode==='register'?'<label class="muted">নাম</label><input required class="field" id="authName" placeholder="তোমার নাম">':''}<label class="muted">ইমেইল</label><input required type="email" class="field" id="authEmail" placeholder="name@example.com"><label class="muted">পাসওয়ার্ড</label>
