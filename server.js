@@ -61,7 +61,40 @@ function cookie(req,name){const s=req.headers.cookie||'';const p=s.split(';').ma
 function auth(req){const id=cookie(req,'ogsid');return sessions.get(id)||null}
 function setSession(res,who){const id=crypto.randomBytes(32).toString('hex');sessions.set(id,{...who,created:Date.now()});res.setHeader('Set-Cookie',`ogsid=${id}; HttpOnly; SameSite=Lax; Path=/; Max-Age=604800`)}
 function clearSession(req,res){const id=cookie(req,'ogsid');sessions.delete(id);res.setHeader('Set-Cookie','ogsid=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0')}
-function readBody(req){return new Promise((resolve,reject)=>{let b='';req.on('data',c=>{b+=c;if(b.length>20000){reject(new Error('Request too large'));req.destroy()}});req.on('end',()=>{try{resolve(b?JSON.parse(b):{})}catch{reject(new Error('Invalid JSON'))}});req.on('error',reject)})}
+
+function readBody(req, limit = 20000) {
+  return new Promise((resolve, reject) => {
+    let b = '';
+    let rejected = false;
+
+    req.on('data', chunk => {
+      if (rejected) return;
+
+      b += chunk.toString('utf8');
+
+      if (Buffer.byteLength(b, 'utf8') > limit) {
+        rejected = true;
+        reject(new Error('Request too large'));
+        req.destroy();
+      }
+    });
+
+    req.on('end', () => {
+      if (rejected) return;
+
+      try {
+        resolve(b ? JSON.parse(b) : {});
+      } catch {
+        reject(new Error('Invalid JSON'));
+      }
+    });
+
+    req.on('error', error => {
+      if (!rejected) reject(error);
+    });
+  });
+}
+
 function needUser(req,res){const s=auth(req);if(!s||s.type!=='user'){send(res,401,{error:'প্রথমে লগইন করো।'});return null}const u=store.users.find(x=>x.id===s.id);if(!u){send(res,401,{error:'অ্যাকাউন্ট পাওয়া যায়নি।'});return null}return u}
 function needAdmin(req,res){const s=auth(req);if(!s||s.type!=='admin'){send(res,401,{error:'অ্যাডমিন লগইন প্রয়োজন।'});return false}return true}
 function hashPassword(p,salt=crypto.randomBytes(16).toString('hex')){return new Promise((resolve,reject)=>crypto.scrypt(p,salt,64,(e,k)=>e?reject(e):resolve({salt,hash:k.toString('hex')})))}
@@ -275,22 +308,22 @@ if (req.method === 'POST' &&
     [5060, 3179], [10120, 6350]
   ];
 
-  const updatedProducts = {};
-
   for (const [diamonds, price] of packages) {
     const id = 'ff' + diamonds;
-    updatedProducts[id] = {
+    const old = store.products[id] || {};
+
+    store.products[id] = {
+      ...old,
       diamonds,
       label: diamonds + ' Diamond',
       price
     };
   }
 
-  store.products = updatedProducts;
   save();
 
   return send(res, 200, {
-    message: '২৩টি Diamond প্যাকেজ যোগ হয়েছে।',
+    message: '২৩টি Diamond প্যাকেজ যোগ বা আপডেট হয়েছে।',
     count: packages.length
   });
 }
