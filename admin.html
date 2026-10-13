@@ -117,14 +117,14 @@ async function loadProducts() {
       const item = document.createElement('div');
       item.className = 'package';
       item.innerHTML = `
-        <strong>${safe(p.id)}</strong>
-        <input id="label-${safe(p.id)}" value="${safe(p.label)}" placeholder="প্যাকেজের নাম">
-        <input id="diamonds-${safe(p.id)}" type="number" min="1" value="${safe(p.diamonds)}" placeholder="Diamond সংখ্যা">
-        <input id="price-${safe(p.id)}" type="number" min="1" max="1000000" value="${p.price == null ? '' : safe(p.price)}" placeholder="দাম (৳)">
-        <button class="saveBtn">দাম ও প্যাকেজ সংরক্ষণ</button>
         
+<strong>${safe(p.id)}</strong>
+<input id="label-${safe(p.id)}" value="${safe(p.label)}" placeholder="প্যাকেজের নাম">
+<input id="diamonds-${safe(p.id)}" type="number" min="1" value="${safe(p.diamonds)}" placeholder="Diamond সংখ্যা">
+<input id="price-${safe(p.id)}" type="number" min="1" max="1000000" value="${p.price == null ? '' : safe(p.price)}" placeholder="দাম (৳)">
 <button class="saveBtn">দাম ও প্যাকেজ সংরক্ষণ</button>
 <button class="deleteBtn" style="background:#b42318">প্যাকেজ মুছে ফেলো</button>
+
 
         <button class="deleteBtn" style="background:#b42318">প্যাকেজ মুছে ফেলো</button>
       `;
