@@ -294,6 +294,40 @@ if (req.method === 'POST' &&
     count: packages.length
   });
 }
+
+if (req.method === 'POST' &&
+    url.pathname === '/api/admin/products/bulk-import') {
+  if (!needAdmin(req, res)) return;
+
+  const packages = [
+    [25, 20], [50, 35], [100, 70], [115, 78],
+    [240, 157], [355, 237], [480, 315], [505, 337],
+    [610, 395], [725, 479], [850, 559], [965, 635],
+    [1015, 689], [1090, 719], [1240, 789],
+    [1595, 1035], [1850, 1199], [2090, 1349],
+    [2530, 1590], [3140, 1995], [4010, 2559],
+    [5060, 3179], [10120, 6350]
+  ];
+
+  for (const [diamonds, price] of packages) {
+    const id = 'ff' + diamonds;
+    const old = store.products[id] || {};
+
+    store.products[id] = {
+      ...old,
+      diamonds,
+      label: diamonds + ' Diamond',
+      price
+    };
+  }
+
+  save();
+
+  return send(res, 200, {
+    message: '২৩টি Diamond প্যাকেজ যোগ বা আপডেট হয়েছে।',
+    count: packages.length
+  });
+}
                                 
 if (req.method === 'GET' && url.pathname === '/api/admin/products') {
   if (!needAdmin(req, res)) return;
