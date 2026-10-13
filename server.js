@@ -54,6 +54,14 @@ if (!store.products || typeof store.products !== 'object' || Array.isArray(store
   save();
 }
 const products = store.products;
+if (!Array.isArray(store.memberships)) {
+  store.memberships = [
+    { id: 'weekly-lite', name: 'Weekly Lite', price: 43, image: '' },
+    { id: 'weekly', name: 'Weekly', price: 156, image: '' },
+    { id: 'monthly', name: 'Monthly', price: 779, image: '' }
+  ];
+  save();
+}
 
 const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.ico':'image/x-icon'};
 function send(res,status,data,headers={}){const body=typeof data==='string'?data:JSON.stringify(data);res.writeHead(status,{'Content-Type':typeof data==='string'?'text/plain; charset=utf-8':'application/json; charset=utf-8','X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','X-Frame-Options':'DENY','Cache-Control':'no-store',...headers});res.end(body)}
@@ -280,6 +288,59 @@ async function api(req,res,url){const ip=req.socket.remoteAddress||'unknown';
 
  if(url.pathname==='/api/admin/orders'&&req.method==='GET'){if(!needAdmin(req,res))return;return send(res,200,{orders:store.orders.map(o=>({...o,password:undefined}))})}
  if(url.pathname.startsWith('/api/admin/orders/')&&req.method==='PATCH'){if(!needAdmin(req,res))return;const id=decodeURIComponent(url.pathname.split('/').pop()),o=store.orders.find(x=>x.order_id===id);if(!o)return send(res,404,{error:'অর্ডার পাওয়া যায়নি।'});const b=await readBody(req),statuses=['Pending','Price Confirmed','Processing','Completed','Cancelled'];if(!statuses.includes(b.status))return send(res,400,{error:'সঠিক স্ট্যাটাস বেছে নাও।'});let amount=null;if(b.amount!==''&&b.amount!==null&&b.amount!==undefined){amount=Number(b.amount);if(!Number.isFinite(amount)||amount<0||amount>10000000)return send(res,400,{error:'সঠিক মূল্য লিখো।'})}o.status=b.status;o.amount=amount;o.updated_at=new Date().toISOString();save();return send(res,200,{order:{order_id:o.order_id,status:o.status,amount:o.amount}})}
+ if (req.method === 'GET' && url.pathname === '/api/memberships') {
+  return send(res, 200, {
+    memberships: store.memberships
+  });
+}
+
+if (req.method === 'GET' && url.pathname === '/api/admin/memberships') {
+  if (!needAdmin(req, res)) return;
+
+  return send(res, 200, {
+    memberships: store.memberships
+  });
+}
+
+if (req.method === 'PATCH' &&
+    url.pathname.startsWith('/api/admin/memberships/')) {
+  if (!needAdmin(req, res)) return;
+
+  const id = decodeURIComponent(url.pathname.split('/').pop());
+  const membership = store.memberships.find(item => item.id === id);
+
+  if (!membership) {
+    return send(res, 404, {
+      error: 'Membership পাওয়া যায়নি।'
+    });
+  }
+
+  const body = await readBody(req, 400000);
+  const image = String(body.image || '');
+
+  if (
+    image &&
+    !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(image)
+  ) {
+    return send(res, 400, {
+      error: 'JPG, PNG অথবা WebP ছবি আপলোড করো।'
+    });
+  }
+
+  if (image.length > 300000) {
+    return send(res, 413, {
+      error: 'ছবিটি অনেক বড়। ছোট ছবি বেছে নাও।'
+    });
+  }
+
+  membership.image = image;
+  save();
+
+  return send(res, 200, {
+    message: 'Membership-এর ছবি সংরক্ষিত হয়েছে।',
+    membership
+  });
+}                               
  if (req.method === 'GET' && url.pathname === '/api/products') {
   return send(
     res,
