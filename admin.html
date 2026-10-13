@@ -44,6 +44,11 @@ small,.muted{color:#bdc8dd;line-height:1.6}
 
 <div class="card">
 <h3>📦 প্যাকেজ ও দাম পরিবর্তন</h3>
+  
+<button id="bulkImportBtn" class="secondary" onclick="bulkImportPackages()">
+  💎 ২৩টি Diamond প্যাকেজ এক ক্লিকে যোগ করো
+</button>
+
 <button class="secondary" onclick="loadProducts()">তালিকা রিফ্রেশ</button>
 <div id="products"></div>
 </div>
@@ -204,6 +209,32 @@ async function addPackage() {
     $('message').textContent = 'প্যাকেজ যোগ হয়নি: ' + error.message;
   }
 }
+  
+async function bulkImportPackages() {
+  if (!confirm('২৩টি Diamond প্যাকেজ যোগ বা আপডেট করবে?')) return;
+
+  const button = $('bulkImportBtn');
+  button.disabled = true;
+  $('message').textContent = 'প্যাকেজ যোগ হচ্ছে...';
+
+  try {
+    const result = await api('/admin/products/bulk-import', {
+      method: 'POST',
+      body: JSON.stringify({})
+    });
+
+    $('message').textContent =
+      result.message || 'প্যাকেজ যোগ হয়েছে।';
+
+    await loadProducts();
+  } catch (error) {
+    $('message').textContent =
+      'প্যাকেজ যোগ হয়নি: ' + error.message;
+  } finally {
+    button.disabled = false;
+  }
+}
+
 </script>
 </body>
 </html>
