@@ -43,6 +43,28 @@ small,.muted{color:#bdc8dd;line-height:1.6}
 </div>
 
 <div class="card">
+  <h3>✨ Membership ছবি আপলোড</h3>
+
+<div class="card">
+  <h3>Weekly Lite — ৳43</h3>
+  <input type="file" id="image-weekly-lite" accept="image/png,image/jpeg,image/webp">
+  <button onclick="uploadMembershipImage('weekly-lite')">📤 ছবি আপলোড</button>
+  <img id="preview-weekly-lite" style="display:none;width:120px;margin-top:10px;border-radius:12px;">
+</div>
+
+<div class="card">
+  <h3>Weekly — ৳156</h3>
+  <input type="file" id="image-weekly" accept="image/png,image/jpeg,image/webp">
+  <button onclick="uploadMembershipImage('weekly')">📤 ছবি আপলোড</button>
+  <img id="preview-weekly" style="display:none;width:120px;margin-top:10px;border-radius:12px;">
+</div>
+
+<div class="card">
+  <h3>Monthly — ৳779</h3>
+  <input type="file" id="image-monthly" accept="image/png,image/jpeg,image/webp">
+  <button onclick="uploadMembershipImage('monthly')">📤 ছবি আপলোড</button>
+  <img id="preview-monthly" style="display:none;width:120px;margin-top:10px;border-radius:12px;">
+</div>
 <h3>📦 প্যাকেজ ও দাম পরিবর্তন</h3>
   
 <button id="bulkImportBtn" class="secondary" onclick="bulkImportPackages()">
@@ -234,7 +256,47 @@ async function bulkImportPackages() {
     button.disabled = false;
   }
 }
+async function uploadMembershipImage(id) {
+  const input = document.getElementById('image-' + id);
+  const preview = document.getElementById('preview-' + id);
+  const file = input.files[0];
 
+  if (!file) {
+    alert('আগে ফোনের গ্যালারি থেকে একটি ছবি বেছে নাও।');
+    return;
+  }
+
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+    alert('শুধু JPG, PNG অথবা WebP ছবি আপলোড করা যাবে।');
+    return;
+  }
+
+  if (file.size > 200000) {
+    alert('ছবিটি ২০০ KB-এর বেশি। ছোট ছবি বেছে নাও।');
+    return;
+  }
+
+  try {
+    const image = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('ছবি পড়া যায়নি।'));
+      reader.readAsDataURL(file);
+    });
+
+    const result = await api('/admin/memberships/' + id, {
+      method: 'PATCH',
+      body: JSON.stringify({ image })
+    });
+
+    preview.src = image;
+    preview.style.display = 'block';
+
+    alert(result.message || 'ছবি আপলোড হয়েছে।');
+  } catch (error) {
+    alert('ছবি আপলোড হয়নি: ' + error.message);
+  }
+}
 </script>
 </body>
 </html>
