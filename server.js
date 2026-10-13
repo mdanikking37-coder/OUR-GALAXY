@@ -287,6 +287,24 @@ if (req.method === 'POST' && url.pathname === '/api/admin/products') {
   return send(res, 201, { message: 'নতুন প্যাকেজ যোগ হয়েছে।', product: { id, ...store.products[id] } });
 }
 
+if (req.method === 'DELETE' &&
+    url.pathname.startsWith('/api/admin/products/')) {
+  if (!needAdmin(req, res)) return;
+
+  const id = decodeURIComponent(url.pathname.split('/').pop());
+
+  if (!store.products[id]) {
+    return send(res, 404, { error: 'প্যাকেজ পাওয়া যায়নি।' });
+  }
+
+  delete store.products[id];
+  save();
+
+  return send(res, 200, {
+    message: 'প্যাকেজ মুছে ফেলা হয়েছে।'
+  });
+}
+
 if (req.method === 'PATCH' && url.pathname.startsWith('/api/admin/products/')) {
   if (!needAdmin(req, res)) return;
   const id = decodeURIComponent(url.pathname.split('/').pop());
