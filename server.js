@@ -303,7 +303,6 @@ if (req.method === 'GET' && url.pathname === '/api/admin/memberships') {
 }
 
 if (req.method === 'PATCH' &&
-if (req.method === 'PATCH' &&
     url.pathname.startsWith('/api/admin/memberships/')) {
   if (!needAdmin(req, res)) return;
 
