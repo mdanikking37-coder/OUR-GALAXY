@@ -303,8 +303,61 @@ if (req.method === 'GET' && url.pathname === '/api/admin/memberships') {
 }
 
 if (req.method === 'PATCH' &&
+if (req.method === 'PATCH' &&
     url.pathname.startsWith('/api/admin/memberships/')) {
   if (!needAdmin(req, res)) return;
+
+  const id = decodeURIComponent(url.pathname.split('/').pop());
+  const membership = store.memberships.find(item => item.id === id);
+
+  if (!membership) {
+    return send(res, 404, {
+      error: 'Membership পাওয়া যায়নি।'
+    });
+  }
+
+  const body = await readBody(req, 400000);
+
+  if (body.image !== undefined) {
+    const image = String(body.image || '');
+
+    if (
+      image &&
+      !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(image)
+    ) {
+      return send(res, 400, {
+        error: 'JPG, PNG অথবা WebP ছবি আপলোড করো।'
+      });
+    }
+
+    if (image.length > 300000) {
+      return send(res, 413, {
+        error: 'ছবিটি অনেক বড়। ছোট ছবি বেছে নাও।'
+      });
+    }
+
+    membership.image = image;
+  }
+
+  if (body.price !== undefined) {
+    const price = Number(body.price);
+
+    if (!Number.isFinite(price) || price < 1 || price > 100000) {
+      return send(res, 400, {
+        error: 'দাম ১ থেকে ১০০০০০ টাকার মধ্যে দাও।'
+      });
+    }
+
+    membership.price = price;
+  }
+
+  save();
+
+  return send(res, 200, {
+    message: 'Membership-এর তথ্য সংরক্ষিত হয়েছে।',
+    membership
+  });
+}  if (!needAdmin(req, res)) return;
 
   const id = decodeURIComponent(url.pathname.split('/').pop());
   const membership = store.memberships.find(item => item.id === id);
